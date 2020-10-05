@@ -35,6 +35,7 @@ import androidx.core.app.TaskStackBuilder;
 
 public class UnityNotificationManager extends BroadcastReceiver
 {
+    public static final String ALARMS_PREFS_KEY_SUFFIX = ":alarms";
     private static Set<String> channels = new HashSet<>();
 
     public static void CreateChannel(String identifier, String name, String description, int importance, String soundName, int enableLights, int lightColor, int enableVibration, long[] vibrationPattern, String bundle) {
@@ -103,6 +104,8 @@ public class UnityNotificationManager extends BroadcastReceiver
             am.setExact(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + delayMs, PendingIntent.getBroadcast(currentActivity, id, intent, PendingIntent.FLAG_UPDATE_CURRENT));
         else
             am.set(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + delayMs, PendingIntent.getBroadcast(currentActivity, id, intent, PendingIntent.FLAG_UPDATE_CURRENT));
+
+        saveAlarmId(currentActivity, id);
     }
 
     public static void SetRepeatingNotification(int id, long delayMs, String title, String message, String ticker, long rep, int sound, String soundName, int vibrate, int lights,
@@ -134,6 +137,8 @@ public class UnityNotificationManager extends BroadcastReceiver
         b.putParcelableArrayList("actions", actions);
         intent.putExtra("actionsBundle", b);
         am.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + delayMs, rep, PendingIntent.getBroadcast(currentActivity, id, intent, PendingIntent.FLAG_UPDATE_CURRENT));
+
+        saveAlarmId(currentActivity, id);
     }
 
     public void onReceive(Context context, Intent intent)
@@ -158,6 +163,8 @@ public class UnityNotificationManager extends BroadcastReceiver
         if (b != null && b.containsKey("actions")) {
             actions = b.getParcelableArrayList("actions");
         }
+
+        removeAlarmId(context, id);
 
         Resources res = context.getResources();
 
@@ -319,7 +326,7 @@ public class UnityNotificationManager extends BroadcastReceiver
         try
         {
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-            JSONArray jsonArray2 = new JSONArray(prefs.getString(context.getPackageName() + ":alarms", "[]"));
+            JSONArray jsonArray2 = new JSONArray(prefs.getString(context.getPackageName() + ALARMS_PREFS_KEY_SUFFIX, "[]"));
             for (int i = 0; i < jsonArray2.length(); i++)
                 ids.add(jsonArray2.getInt(i));
         }
@@ -337,7 +344,7 @@ public class UnityNotificationManager extends BroadcastReceiver
             jsonArray.put(idAlarm);
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         SharedPreferences.Editor editor = prefs.edit();
-        editor.putString(context.getPackageName() + ":alarms", jsonArray.toString());
+        editor.putString(context.getPackageName() + ALARMS_PREFS_KEY_SUFFIX, jsonArray.toString());
         editor.apply();
     }
 }
